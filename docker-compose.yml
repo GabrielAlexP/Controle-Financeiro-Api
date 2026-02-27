@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  mysql-financeiro:
+    image: mysql:8.0
+    container_name: db_financeiro
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: db_financeiro
+      MYSQL_USER: user_financeiro
+      MYSQL_PASSWORD: bbb052728
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
