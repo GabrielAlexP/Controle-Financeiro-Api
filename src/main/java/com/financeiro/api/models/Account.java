@@ -21,6 +21,7 @@ public class Account {
     @Column(nullable = false)
     private String name;
 
+    @Builder.Default
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal balance = BigDecimal.ZERO;
 

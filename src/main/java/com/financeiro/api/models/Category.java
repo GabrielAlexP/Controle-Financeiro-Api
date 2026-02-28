@@ -27,6 +27,7 @@ public class Category {
     @Column(name = "color_hex", length = 7)
     private String colorHex;
 
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 }
