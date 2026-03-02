@@ -68,4 +68,22 @@ public class AuthController {
                 .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
                 .build();
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser() {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+            return ResponseEntity.status(401).build();
+        }
+
+        User user = (User) authentication.getPrincipal();
+
+        java.util.Map<String, Object> userData = new java.util.HashMap<>();
+        userData.put("id", user.getId());
+        userData.put("username", user.getUsername());
+        userData.put("profilePictureUrl", user.getProfilePictureUrl());
+
+        return ResponseEntity.ok(userData);
+    }
 }
