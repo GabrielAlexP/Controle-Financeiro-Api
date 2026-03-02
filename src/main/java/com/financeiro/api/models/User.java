@@ -28,6 +28,10 @@ public class User implements UserDetails {
     @Column(name = "profile_picture_url")
     private String profilePictureUrl;
 
+    @Builder.Default
+    @Column(name = "is_onboarded", nullable = false)
+    private Boolean isOnboarded = false;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

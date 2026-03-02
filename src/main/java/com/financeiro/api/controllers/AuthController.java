@@ -12,6 +12,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -71,19 +72,33 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser() {
-        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
         
         if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
             return ResponseEntity.status(401).build();
         }
 
         User user = (User) authentication.getPrincipal();
+        User dbUser = userRepository.findById(user.getId()).orElseThrow();
 
         java.util.Map<String, Object> userData = new java.util.HashMap<>();
-        userData.put("id", user.getId());
-        userData.put("username", user.getUsername());
-        userData.put("profilePictureUrl", user.getProfilePictureUrl());
+        userData.put("id", dbUser.getId());
+        userData.put("username", dbUser.getUsername());
+        userData.put("profilePictureUrl", dbUser.getProfilePictureUrl());
+        userData.put("isOnboarded", dbUser.getIsOnboarded());
 
         return ResponseEntity.ok(userData);
+    }
+
+    @PutMapping("/onboard")
+    public ResponseEntity<?> completeOnboarding() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        User user = (User) authentication.getPrincipal();
+        
+        User dbUser = userRepository.findById(user.getId()).orElseThrow();
+        dbUser.setIsOnboarded(true);
+        userRepository.save(dbUser);
+        
+        return ResponseEntity.ok().build();
     }
 }
