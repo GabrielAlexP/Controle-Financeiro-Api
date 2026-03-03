@@ -16,6 +16,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -70,6 +73,21 @@ public class AuthController {
                 .build();
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        ResponseCookie jwtCookie = ResponseCookie.from("jwt_token", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .build();
+    }
+
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -81,7 +99,7 @@ public class AuthController {
         User user = (User) authentication.getPrincipal();
         User dbUser = userRepository.findById(user.getId()).orElseThrow();
 
-        java.util.Map<String, Object> userData = new java.util.HashMap<>();
+        Map<String, Object> userData = new HashMap<>();
         userData.put("id", dbUser.getId());
         userData.put("username", dbUser.getUsername());
         userData.put("profilePictureUrl", dbUser.getProfilePictureUrl());
