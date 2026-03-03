@@ -12,9 +12,17 @@ public record TransactionRequestDTO(
         Long creditCardId, 
         
         @NotNull(message = "A categoria é obrigatória") Long categoryId,
+        
         @NotNull(message = "O valor é obrigatório") 
         @Positive(message = "O valor deve ser maior que zero") BigDecimal amount,
-        @NotNull(message = "O tipo (INCOME/EXPENSE) é obrigatório") TransactionType type,
+        
+        @NotNull(message = "O tipo é obrigatório") TransactionType type,
+        
         String description,
-        @NotNull(message = "A data da transação é obrigatória") LocalDate transactionDate
+        
+        @NotNull(message = "A data da transação é obrigatória") LocalDate transactionDate,
+        
+        Boolean isPaid,
+        Boolean isFixed,
+        Integer installments
 ) {}

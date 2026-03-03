@@ -38,6 +38,8 @@ public class CreditCardService {
                 .limitAmount(data.limitAmount())
                 .closingDay(data.closingDay())
                 .dueDay(data.dueDay())
+                .color1Hex(data.color1Hex())
+                .color2Hex(data.color2Hex())
                 .build();
 
         return new CreditCardResponseDTO(creditCardRepository.save(card));

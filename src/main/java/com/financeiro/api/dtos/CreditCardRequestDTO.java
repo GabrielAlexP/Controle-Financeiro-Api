@@ -11,5 +11,7 @@ public record CreditCardRequestDTO(
         @NotNull(message = "O limite do cartão é obrigatório")
         @Positive(message = "O limite deve ser maior que zero") BigDecimal limitAmount,
         @NotNull(message = "O dia de fechamento é obrigatório") Integer closingDay,
-        @NotNull(message = "O dia de vencimento é obrigatório") Integer dueDay
+        @NotNull(message = "O dia de vencimento é obrigatório") Integer dueDay,
+        String color1Hex,
+        String color2Hex
 ) {}

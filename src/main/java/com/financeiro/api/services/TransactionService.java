@@ -13,6 +13,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -28,7 +32,7 @@ public class TransactionService {
     }
 
     @Transactional 
-    public TransactionResponseDTO create(TransactionRequestDTO data) {
+    public List<TransactionResponseDTO> create(TransactionRequestDTO data) {
         User user = getAuthenticatedUser();
 
         Account account = accountRepository.findByIdAndUser(data.accountId(), user)
@@ -47,27 +51,55 @@ public class TransactionService {
             }
         }
 
-        Transaction transaction = Transaction.builder()
-                .user(user)
-                .account(account)
-                .creditCard(creditCard)
-                .category(category)
-                .amount(data.amount())
-                .type(data.type())
-                .description(data.description())
-                .transactionDate(data.transactionDate())
-                .build();
+        int totalInstallments = (data.installments() != null && data.installments() > 0) ? data.installments() : 1;
+        boolean isFixed = data.isFixed() != null ? data.isFixed() : false;
+        boolean firstIsPaid = data.isPaid() != null ? data.isPaid() : true;
+
+        BigDecimal totalAmount = data.amount();
+        BigDecimal installmentAmount = totalAmount.divide(new BigDecimal(totalInstallments), 2, RoundingMode.HALF_UP);
+        BigDecimal remainder = totalAmount.subtract(installmentAmount.multiply(new BigDecimal(totalInstallments)));
+
+        List<Transaction> generatedTransactions = new ArrayList<>();
+
+        for (int i = 1; i <= totalInstallments; i++) {
+            BigDecimal currentAmount = (i == 1) ? installmentAmount.add(remainder) : installmentAmount;
+            
+            boolean currentIsPaid = (i == 1) ? firstIsPaid : false; 
+            LocalDate currentDate = data.transactionDate().plusMonths(i - 1);
+
+            Transaction transaction = Transaction.builder()
+                    .user(user)
+                    .account(account)
+                    .creditCard(creditCard)
+                    .category(category)
+                    .amount(currentAmount)
+                    .type(data.type())
+                    .description(data.description())
+                    .transactionDate(currentDate)
+                    .isPaid(currentIsPaid)
+                    .isFixed(isFixed)
+                    .installmentCurrent(totalInstallments > 1 ? i : null)
+                    .installmentTotal(totalInstallments > 1 ? totalInstallments : null)
+                    .build();
+
+            generatedTransactions.add(transaction);
+
+            if (creditCard == null && currentIsPaid) {
+                if (data.type() == TransactionType.INCOME) {
+                    account.setBalance(account.getBalance().add(currentAmount));
+                } else {
+                    account.setBalance(account.getBalance().subtract(currentAmount));
+                }
+            }
+        }
 
         if (creditCard == null) {
-            if (data.type() == TransactionType.INCOME) {
-                account.setBalance(account.getBalance().add(data.amount()));
-            } else {
-                account.setBalance(account.getBalance().subtract(data.amount()));
-            }
             accountRepository.save(account);
         }
 
-        return new TransactionResponseDTO(transactionRepository.save(transaction));
+        List<Transaction> savedTransactions = transactionRepository.saveAll(generatedTransactions);
+        
+        return savedTransactions.stream().map(TransactionResponseDTO::new).toList();
     }
 
     public List<TransactionResponseDTO> listAll() {
@@ -83,7 +115,7 @@ public class TransactionService {
 
         Account account = transaction.getAccount();
 
-        if (transaction.getCreditCard() == null) {
+        if (transaction.getCreditCard() == null && Boolean.TRUE.equals(transaction.getIsPaid())) {
             if (transaction.getType() == TransactionType.INCOME) {
                 account.setBalance(account.getBalance().subtract(transaction.getAmount()));
             } else {

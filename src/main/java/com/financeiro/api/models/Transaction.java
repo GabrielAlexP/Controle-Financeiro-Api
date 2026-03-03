@@ -44,6 +44,20 @@ public class Transaction {
     @Column(name = "transaction_date", nullable = false)
     private LocalDate transactionDate;
 
+    @Builder.Default
+    @Column(name = "is_paid", nullable = false)
+    private Boolean isPaid = true;
+
+    @Builder.Default
+    @Column(name = "is_fixed", nullable = false)
+    private Boolean isFixed = false;
+
+    @Column(name = "installment_current")
+    private Integer installmentCurrent;
+
+    @Column(name = "installment_total")
+    private Integer installmentTotal;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

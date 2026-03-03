@@ -7,6 +7,7 @@ public record CategoryResponseDTO(
         Long id, 
         String name, 
         TransactionType type, 
+        String icon,
         String colorHex, 
         Boolean isActive
 ) {
@@ -15,6 +16,7 @@ public record CategoryResponseDTO(
             category.getId(), 
             category.getName(), 
             category.getType(), 
+            category.getIcon(),
             category.getColorHex(), 
             category.getIsActive()
         );

@@ -1,5 +1,6 @@
 package com.financeiro.api.models;
 
+import com.financeiro.api.enums.YieldType;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -20,6 +21,9 @@ public class Goal {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "institution")
+    private String institution;
+
     @Column(name = "target_amount", precision = 10, scale = 2)
     private BigDecimal targetAmount;
 
@@ -28,6 +32,11 @@ public class Goal {
     private BigDecimal currentAmount = BigDecimal.ZERO;
 
     @Builder.Default
-    @Column(name = "yields_cdi", nullable = false)
-    private Boolean yieldsCdi = true;
+    @Column(name = "yield_amount", precision = 10, scale = 2)
+    private BigDecimal yieldAmount = BigDecimal.ZERO;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(name = "yield_type", nullable = false)
+    private YieldType yieldType = YieldType.NONE;
 }

@@ -16,7 +16,11 @@ public record TransactionResponseDTO(
         BigDecimal amount,
         TransactionType type,
         String description,
-        LocalDate transactionDate
+        LocalDate transactionDate,
+        Boolean isPaid,
+        Boolean isFixed,
+        Integer installmentCurrent,
+        Integer installmentTotal
 ) {
     public TransactionResponseDTO(Transaction t) {
         this(
@@ -30,7 +34,11 @@ public record TransactionResponseDTO(
             t.getAmount(), 
             t.getType(), 
             t.getDescription(), 
-            t.getTransactionDate()
+            t.getTransactionDate(),
+            t.getIsPaid(),
+            t.getIsFixed(),
+            t.getInstallmentCurrent(),
+            t.getInstallmentTotal()
         );
     }
 }

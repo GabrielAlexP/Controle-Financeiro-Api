@@ -24,9 +24,11 @@ public class GoalService {
         Goal goal = Goal.builder()
                 .user(getAuthenticatedUser())
                 .name(data.name())
+                .institution(data.institution())
                 .targetAmount(data.targetAmount())
                 .currentAmount(BigDecimal.ZERO)
-                .yieldsCdi(data.yieldsCdi())
+                .yieldAmount(BigDecimal.ZERO)
+                .yieldType(data.yieldType())
                 .build();
         return new GoalResponseDTO(goalRepository.save(goal));
     }

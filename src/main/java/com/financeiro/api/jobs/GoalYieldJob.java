@@ -1,5 +1,6 @@
 package com.financeiro.api.jobs;
 
+import com.financeiro.api.enums.YieldType;
 import com.financeiro.api.models.Goal;
 import com.financeiro.api.repositories.GoalRepository;
 import com.financeiro.api.services.BacenIndicatorService;
@@ -23,29 +24,29 @@ public class GoalYieldJob {
     @Scheduled(cron = "0 0 2 * * *")
     public void applyDailyYields() {
 
-        BigDecimal dailyCdiPercentage = bacenService.getIndicators().get("CDI_DIARIA");
+        BigDecimal cdiDaily = bacenService.getIndicators().get("CDI_DIARIA");
+        BigDecimal selicDaily = bacenService.getIndicators().get("SELIC_DIARIA");
         
-        if (dailyCdiPercentage == null) {
-            System.err.println("Taxa CDI Diária não encontrada no cache. Abortando rendimentos hoje.");
+        if (cdiDaily == null || selicDaily == null) {
+            System.err.println("Taxas não encontradas no cache. Abortando rendimentos hoje.");
             return;
         }
 
-        BigDecimal multiplier = dailyCdiPercentage.divide(new BigDecimal("100"), 8, RoundingMode.HALF_UP);
+        BigDecimal cdiMultiplier = cdiDaily.divide(new BigDecimal("100"), 8, RoundingMode.HALF_UP);
+        BigDecimal selicMultiplier = selicDaily.divide(new BigDecimal("100"), 8, RoundingMode.HALF_UP);
 
-        List<Goal> activeGoals = goalRepository.findByYieldsCdiTrue();
-
-        int updatedCount = 0;
+        List<Goal> activeGoals = goalRepository.findByYieldTypeNot(YieldType.NONE);
 
         for (Goal goal : activeGoals) {
-
             if (goal.getCurrentAmount() != null && goal.getCurrentAmount().compareTo(BigDecimal.ZERO) > 0) {
 
-                BigDecimal yieldAmount = goal.getCurrentAmount().multiply(multiplier);
+                BigDecimal multiplier = goal.getYieldType() == YieldType.CDI ? cdiMultiplier : selicMultiplier;
+                BigDecimal yieldAmountForToday = goal.getCurrentAmount().multiply(multiplier);
 
-                BigDecimal newBalance = goal.getCurrentAmount().add(yieldAmount);
-
-                goal.setCurrentAmount(newBalance.setScale(2, RoundingMode.HALF_UP));
-                updatedCount++;
+                goal.setCurrentAmount(goal.getCurrentAmount().add(yieldAmountForToday).setScale(2, RoundingMode.HALF_UP));
+                
+                BigDecimal currentYield = goal.getYieldAmount() != null ? goal.getYieldAmount() : BigDecimal.ZERO;
+                goal.setYieldAmount(currentYield.add(yieldAmountForToday).setScale(2, RoundingMode.HALF_UP));
             }
         }
 

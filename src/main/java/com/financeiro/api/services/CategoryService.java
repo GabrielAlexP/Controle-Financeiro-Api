@@ -16,6 +16,7 @@ public class CategoryService {
 
     @Autowired
     private CategoryRepository categoryRepository;
+
     private User getAuthenticatedUser() {
         return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
@@ -25,6 +26,7 @@ public class CategoryService {
                 .user(getAuthenticatedUser())
                 .name(data.name())
                 .type(data.type())
+                .icon(data.icon())
                 .colorHex(data.colorHex())
                 .isActive(true)
                 .build();
@@ -45,6 +47,7 @@ public class CategoryService {
 
         category.setName(data.name());
         category.setType(data.type());
+        category.setIcon(data.icon());
         category.setColorHex(data.colorHex());
 
         return new CategoryResponseDTO(categoryRepository.save(category));

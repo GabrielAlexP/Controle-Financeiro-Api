@@ -28,4 +28,10 @@ public class CreditCard {
 
     @Column(name = "due_day", nullable = false)
     private Integer dueDay;
+
+    @Column(name = "color1_hex", length = 7)
+    private String color1Hex;
+
+    @Column(name = "color2_hex", length = 7)
+    private String color2Hex;
 }

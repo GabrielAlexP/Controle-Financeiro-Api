@@ -24,6 +24,9 @@ public class Category {
     @Column(nullable = false)
     private TransactionType type;
 
+    @Column(name = "icon", length = 50)
+    private String icon;
+
     @Column(name = "color_hex", length = 7)
     private String colorHex;
 

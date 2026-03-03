@@ -9,5 +9,6 @@ public record CategoryRequestDTO(
         String name,
         @NotNull(message = "O tipo da transação é obrigatório") 
         TransactionType type,
+        String icon,
         String colorHex
 ) {}
