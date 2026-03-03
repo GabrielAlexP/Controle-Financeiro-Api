@@ -27,6 +27,11 @@ public class CreditCardController {
         return ResponseEntity.ok(creditCardService.listAll());
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<CreditCardResponseDTO> update(@PathVariable Long id, @RequestBody @Valid CreditCardRequestDTO data) {
+        return ResponseEntity.ok(creditCardService.update(id, data));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         creditCardService.delete(id);

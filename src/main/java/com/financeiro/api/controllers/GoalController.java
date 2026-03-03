@@ -2,6 +2,7 @@ package com.financeiro.api.controllers;
 
 import com.financeiro.api.dtos.GoalRequestDTO;
 import com.financeiro.api.dtos.GoalResponseDTO;
+import com.financeiro.api.dtos.GoalUpdateAmountDTO;
 import com.financeiro.api.services.GoalService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,11 @@ public class GoalController {
     @GetMapping
     public ResponseEntity<List<GoalResponseDTO>> list() {
         return ResponseEntity.ok(goalService.listAll());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<GoalResponseDTO> updateAmount(@PathVariable Long id, @RequestBody @Valid GoalUpdateAmountDTO data) {
+        return ResponseEntity.ok(goalService.updateAmount(id, data));
     }
 
     @DeleteMapping("/{id}")

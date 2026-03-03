@@ -52,6 +52,26 @@ public class CreditCardService {
                 .toList();
     }
 
+    public CreditCardResponseDTO update(Long id, CreditCardRequestDTO data) {
+        User user = getAuthenticatedUser();
+
+        CreditCard card = creditCardRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new RuntimeException("Cartão de crédito não encontrado."));
+
+        Account account = accountRepository.findByIdAndUser(data.accountId(), user)
+                .orElseThrow(() -> new RuntimeException("Conta bancária não encontrada."));
+
+        card.setAccount(account);
+        card.setName(data.name());
+        card.setLimitAmount(data.limitAmount());
+        card.setClosingDay(data.closingDay());
+        card.setDueDay(data.dueDay());
+        card.setColor1Hex(data.color1Hex());
+        card.setColor2Hex(data.color2Hex());
+
+        return new CreditCardResponseDTO(creditCardRepository.save(card));
+    }
+
     public void delete(Long id) {
         CreditCard card = creditCardRepository.findByIdAndUser(id, getAuthenticatedUser())
                 .orElseThrow(() -> new RuntimeException("Cartão de crédito não encontrado."));
