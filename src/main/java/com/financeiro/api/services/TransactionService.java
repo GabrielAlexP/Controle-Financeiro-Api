@@ -119,15 +119,37 @@ public class TransactionService {
 
         tx.setIsPaid(true);
 
-        if (tx.getCreditCard() == null) {
-            Account account = tx.getAccount();
-            if (tx.getType() == TransactionType.INCOME) {
-                account.setBalance(account.getBalance().add(tx.getAmount()));
-            } else {
-                account.setBalance(account.getBalance().subtract(tx.getAmount()));
-            }
-            accountRepository.save(account);
+        Account account = tx.getAccount();
+        if (tx.getType() == TransactionType.INCOME) {
+            account.setBalance(account.getBalance().add(tx.getAmount()));
+        } else {
+            account.setBalance(account.getBalance().subtract(tx.getAmount()));
         }
+        accountRepository.save(account);
+
+        return new TransactionResponseDTO(transactionRepository.save(tx));
+    }
+
+    @Transactional
+    public TransactionResponseDTO advanceTransaction(Long id) {
+        User user = getAuthenticatedUser();
+        Transaction tx = transactionRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new RuntimeException("Transação não encontrada."));
+
+        if (tx.getIsPaid()) {
+            throw new RuntimeException("Transação já está paga.");
+        }
+
+        tx.setIsPaid(true);
+        tx.setTransactionDate(LocalDate.now());
+
+        Account account = tx.getAccount();
+        if (tx.getType() == TransactionType.INCOME) {
+            account.setBalance(account.getBalance().add(tx.getAmount()));
+        } else {
+            account.setBalance(account.getBalance().subtract(tx.getAmount()));
+        }
+        accountRepository.save(account);
 
         return new TransactionResponseDTO(transactionRepository.save(tx));
     }
@@ -175,7 +197,7 @@ public class TransactionService {
 
         Account account = transaction.getAccount();
 
-        if (transaction.getCreditCard() == null && Boolean.TRUE.equals(transaction.getIsPaid())) {
+        if (Boolean.TRUE.equals(transaction.getIsPaid())) {
             if (transaction.getType() == TransactionType.INCOME) {
                 account.setBalance(account.getBalance().subtract(transaction.getAmount()));
             } else {

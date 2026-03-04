@@ -33,6 +33,11 @@ public class TransactionController {
         return ResponseEntity.ok(transactionService.markAsPaid(id));
     }
 
+    @PutMapping("/{id}/antecipar")
+    public ResponseEntity<TransactionResponseDTO> advanceTransaction(@PathVariable Long id) {
+        return ResponseEntity.ok(transactionService.advanceTransaction(id));
+    }
+
     @PostMapping("/pagar-fatura/{cardId}")
     public ResponseEntity<Void> payCreditCardBill(@PathVariable Long cardId, @RequestParam String month) {
         transactionService.payCreditCardBill(cardId, month);
