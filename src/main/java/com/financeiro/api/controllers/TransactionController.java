@@ -28,6 +28,17 @@ public class TransactionController {
         return ResponseEntity.ok(transactionService.listAll());
     }
 
+    @PutMapping("/{id}/pagar")
+    public ResponseEntity<TransactionResponseDTO> markAsPaid(@PathVariable Long id) {
+        return ResponseEntity.ok(transactionService.markAsPaid(id));
+    }
+
+    @PostMapping("/pagar-fatura/{cardId}")
+    public ResponseEntity<Void> payCreditCardBill(@PathVariable Long cardId, @RequestParam String month) {
+        transactionService.payCreditCardBill(cardId, month);
+        return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         transactionService.delete(id);

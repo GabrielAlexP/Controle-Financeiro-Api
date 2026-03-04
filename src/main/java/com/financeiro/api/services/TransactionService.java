@@ -108,6 +108,66 @@ public class TransactionService {
     }
 
     @Transactional
+    public TransactionResponseDTO markAsPaid(Long id) {
+        User user = getAuthenticatedUser();
+        Transaction tx = transactionRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new RuntimeException("Transação não encontrada."));
+
+        if (tx.getIsPaid()) {
+            throw new RuntimeException("Transação já está paga.");
+        }
+
+        tx.setIsPaid(true);
+
+        if (tx.getCreditCard() == null) {
+            Account account = tx.getAccount();
+            if (tx.getType() == TransactionType.INCOME) {
+                account.setBalance(account.getBalance().add(tx.getAmount()));
+            } else {
+                account.setBalance(account.getBalance().subtract(tx.getAmount()));
+            }
+            accountRepository.save(account);
+        }
+
+        return new TransactionResponseDTO(transactionRepository.save(tx));
+    }
+
+    @Transactional
+    public void payCreditCardBill(Long cardId, String yearMonth) {
+        User user = getAuthenticatedUser();
+        CreditCard card = creditCardRepository.findByIdAndUser(cardId, user)
+                .orElseThrow(() -> new RuntimeException("Cartão não encontrado."));
+
+        Account account = card.getAccount();
+
+        List<Transaction> allTx = transactionRepository.findByUserOrderByTransactionDateDesc(user);
+        
+        List<Transaction> billTx = allTx.stream()
+                .filter(tx -> tx.getCreditCard() != null && tx.getCreditCard().getId().equals(cardId))
+                .filter(tx -> !tx.getIsPaid())
+                .filter(tx -> {
+                    if (tx.getTransactionDate() == null) return false;
+                    String txMonth = tx.getTransactionDate().toString().substring(0, 7);
+                    return txMonth.equals(yearMonth);
+                })
+                .toList();
+
+        if (billTx.isEmpty()) {
+            throw new RuntimeException("Nenhuma transação pendente para esta fatura.");
+        }
+
+        BigDecimal totalBill = BigDecimal.ZERO;
+        for (Transaction tx : billTx) {
+            totalBill = totalBill.add(tx.getAmount());
+            tx.setIsPaid(true);
+        }
+
+        account.setBalance(account.getBalance().subtract(totalBill));
+        accountRepository.save(account);
+        transactionRepository.saveAll(billTx);
+    }
+
+    @Transactional
     public void delete(Long id) {
         User user = getAuthenticatedUser();
         Transaction transaction = transactionRepository.findByIdAndUser(id, user)
