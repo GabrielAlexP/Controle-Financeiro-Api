@@ -10,7 +10,9 @@ import com.financeiro.api.enums.TransactionType;
 import com.financeiro.api.repositories.UserRepository;
 import com.financeiro.api.repositories.CategoryRepository;
 import com.financeiro.api.repositories.AccountRepository;
+import com.financeiro.api.services.AuthService;
 import com.financeiro.api.services.TokenService;
+import com.financeiro.api.services.DataSeederService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -26,6 +28,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/auth")
@@ -48,6 +51,12 @@ public class AuthController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private DataSeederService dataSeederService;
+
+    @Autowired
+    private AuthService authService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid RegisterDTO data) {
@@ -76,6 +85,40 @@ public class AuthController {
         return ResponseEntity.status(201).build();
     }
 
+    @PostMapping("/guest")
+    public ResponseEntity<?> guestLogin() {
+        String randomSuffix = UUID.randomUUID().toString().substring(0, 8);
+        String guestUsername = "visitante_" + randomSuffix;
+        String guestPassword = UUID.randomUUID().toString();
+        
+        String encryptedPassword = passwordEncoder.encode(guestPassword);
+
+        User guestUser = User.builder()
+                .username(guestUsername)
+                .passwordHash(encryptedPassword)
+                .isOnboarded(true)
+                .isGuest(true)
+                .build();
+
+        User savedUser = userRepository.save(guestUser);
+
+        dataSeederService.seedGuestData(savedUser);
+
+        String token = tokenService.generateToken(savedUser);
+
+        ResponseCookie jwtCookie = ResponseCookie.from("jwt_token", token)
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(2 * 60 * 60)
+                .sameSite("Lax")
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .build();
+    }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Valid LoginDTO data) {
         var usernamePassword = new UsernamePasswordAuthenticationToken(data.username(), data.password());
@@ -96,7 +139,17 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
+    public ResponseEntity<?> logout(@RequestBody(required = false) Map<String, Object> body) {
+        try {
+            var authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal())) {
+                String username = authentication.getName();
+                authService.deleteGuestUser(username);
+            }
+        } catch (Exception e) {
+            System.out.println("Erro seguro ignorado ao deletar visitante: " + e.getMessage());
+        }
+
         ResponseCookie jwtCookie = ResponseCookie.from("jwt_token", "")
                 .httpOnly(true)
                 .secure(false)
@@ -123,7 +176,7 @@ public class AuthController {
 
         Map<String, Object> userData = new HashMap<>();
         userData.put("id", dbUser.getId());
-        userData.put("username", dbUser.getUsername());
+        userData.put("username", Boolean.TRUE.equals(dbUser.getIsGuest()) ? "Visitante" : dbUser.getUsername());
         userData.put("profilePictureUrl", dbUser.getProfilePictureUrl());
         userData.put("isOnboarded", dbUser.getIsOnboarded());
 

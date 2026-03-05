@@ -32,6 +32,10 @@ public class User implements UserDetails {
     @Column(name = "is_onboarded", nullable = false)
     private Boolean isOnboarded = false;
 
+    @Builder.Default
+    @Column(name = "is_guest", nullable = false)
+    private Boolean isGuest = false;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

@@ -2,6 +2,8 @@ package com.financeiro.api.models;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import java.math.BigDecimal;
 
 @Entity
@@ -15,6 +17,7 @@ public class CreditCard {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Account account;
 
     @Column(nullable = false)
