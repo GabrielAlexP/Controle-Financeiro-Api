@@ -2,8 +2,14 @@ package com.financeiro.api.controllers;
 
 import com.financeiro.api.dtos.LoginDTO;
 import com.financeiro.api.dtos.RegisterDTO;
+import com.financeiro.api.dtos.OnboardDTO;
 import com.financeiro.api.models.User;
+import com.financeiro.api.models.Category;
+import com.financeiro.api.models.Account;
+import com.financeiro.api.enums.TransactionType;
 import com.financeiro.api.repositories.UserRepository;
+import com.financeiro.api.repositories.CategoryRepository;
+import com.financeiro.api.repositories.AccountRepository;
 import com.financeiro.api.services.TokenService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +22,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -28,6 +36,12 @@ public class AuthController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
+
+    @Autowired
+    private AccountRepository accountRepository;
 
     @Autowired
     private TokenService tokenService;
@@ -49,7 +63,15 @@ public class AuthController {
                 .profilePictureUrl(data.profilePictureUrl())
                 .build();
 
-        this.userRepository.save(newUser);
+        User savedUser = this.userRepository.save(newUser);
+
+        List<Category> defaultCategories = List.of(
+            Category.builder().name("Contas da Casa").type(TransactionType.EXPENSE).colorHex("#EF4444").icon("🏠").user(savedUser).build(),
+            Category.builder().name("Alimentação").type(TransactionType.EXPENSE).colorHex("#F59E0B").icon("🍔").user(savedUser).build(),
+            Category.builder().name("Uber").type(TransactionType.EXPENSE).colorHex("#3B82F6").icon("🚗").user(savedUser).build()
+        );
+
+        categoryRepository.saveAll(defaultCategories);
 
         return ResponseEntity.status(201).build();
     }
@@ -109,11 +131,22 @@ public class AuthController {
     }
 
     @PutMapping("/onboard")
-    public ResponseEntity<?> completeOnboarding() {
+    public ResponseEntity<?> completeOnboarding(@RequestBody(required = false) OnboardDTO data) {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
         
         User dbUser = userRepository.findById(user.getId()).orElseThrow();
+
+        if (data != null && data.accountName() != null && !data.accountName().trim().isEmpty()) {
+            Account account = Account.builder()
+                .name(data.accountName())
+                .balance(data.initialBalance() != null ? data.initialBalance() : BigDecimal.ZERO)
+                .user(dbUser)
+                .build();
+            
+            accountRepository.save(account);
+        }
+
         dbUser.setIsOnboarded(true);
         userRepository.save(dbUser);
         
